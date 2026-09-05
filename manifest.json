@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "OQB 題目自動收集工具",
   "version": "1.0",
-  "description": "Auto export questions in OQB",
+  "description": "auto export questions in OQB",
   "content_scripts": [
     {
       "matches": ["*://*.oqb.edcity.hk/*", "*://oqb.edcity.hk/*"],
@@ -12,7 +12,8 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "oqb@hugow.dev",
-      "strict_min_version": "109.0"
+      "strict_min_version": "109.0",
+      "data_collection_permissions": []
     }
   }
 }
