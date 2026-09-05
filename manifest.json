@@ -1,12 +1,18 @@
 {
   "manifest_version": 3,
-  "name": "OQB 題目自動收集神器",
+  "name": "OQB 題目自動收集工具",
   "version": "1.0",
-  "description": "自動喺 OQB 網頁收集題目並匯出 PDF",
+  "description": "Auto export questions in OQB",
   "content_scripts": [
     {
       "matches": ["*://*.oqb.edcity.hk/*", "*://oqb.edcity.hk/*"],
       "js": ["content.js"]
     }
-  ]
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "oqb@hugow.dev",
+      "strict_min_version": "109.0"
+    }
+  }
 }
