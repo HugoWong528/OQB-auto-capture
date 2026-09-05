@@ -1,0 +1,378 @@
+//OQB V2
+
+//OQB
+(() => {
+  // 1. 初始化狀態
+  window.autoQuestions = [];
+  let isRunning = false;
+  let autoTimer = null;
+  let showMetaInfo = true; 
+  let showLevel = true;    
+  let showTopic = true;    
+
+  // 清除舊 UI
+  const oldUI = document.getElementById('oqb-auto-collector-ui');
+  if (oldUI) oldUI.remove();
+
+  // 2. 建立精美且可拖曳的控制面板
+  const panel = document.createElement('div');
+  panel.id = 'oqb-auto-collector-ui';
+  panel.style.cssText = `
+    position: fixed; bottom: 25px; right: 25px; z-index: 999999;
+    background: #0f172a; color: #f8fafc; padding: 16px 20px; border-radius: 14px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.6); border: 1px solid #334155;
+    display: flex; flex-direction: column; gap: 10px; font-family: system-ui, -apple-system, sans-serif;
+    min-width: 300px; touch-action: none; user-select: none;
+  `;
+
+  // 拖曳邏輯
+  let isDragging = false;
+  let startX, startY, initialX, initialY;
+
+  const dragStart = (e) => {
+    isDragging = true;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    startX = clientX;
+    startY = clientY;
+    const rect = panel.getBoundingClientRect();
+    initialX = rect.left;
+    initialY = rect.top;
+    panel.style.left = initialX + 'px';
+    panel.style.top = initialY + 'px';
+    panel.style.bottom = 'auto';
+    panel.style.right = 'auto';
+  };
+
+  const dragMove = (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    panel.style.left = (initialX + (clientX - startX)) + 'px';
+    panel.style.top = (initialY + (clientY - startY)) + 'px';
+  };
+
+  const dragEnd = () => { isDragging = false; };
+
+  panel.addEventListener('mousedown', dragStart);
+  document.addEventListener('mousemove', dragMove);
+  document.addEventListener('mouseup', dragEnd);
+  panel.addEventListener('touchstart', dragStart, { passive: false });
+  document.addEventListener('touchmove', dragMove, { passive: false });
+  document.addEventListener('touchend', dragEnd);
+
+  // 頂部狀態列
+  const headerRow = document.createElement('div');
+  headerRow.style.cssText = 'display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 8px; cursor: move;';
+  
+  const status = document.createElement('span');
+  status.style.cssText = 'color: #38bdf8; font-weight: bold; font-size: 14px;';
+  const updateStatus = () => { status.innerText = `📦 已收集: ${window.autoQuestions.length} 題`; };
+  updateStatus();
+
+  const modeBadge = document.createElement('span');
+  modeBadge.style.cssText = 'background: #334155; color: #cbd5e1; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;';
+  modeBadge.innerText = '自動模式 (精準版)';
+
+  headerRow.appendChild(status);
+  headerRow.appendChild(modeBadge);
+  panel.appendChild(headerRow);
+
+  // 功能列 1
+  const btnRow1 = document.createElement('div');
+  btnRow1.style.cssText = 'display: flex; gap: 8px;';
+  const startBtn = document.createElement('button');
+  startBtn.innerText = '▶️ 開始自動';
+  startBtn.style.cssText = 'flex: 1; background: #0284c7; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px;';
+  const manualSnapBtn = document.createElement('button');
+  manualSnapBtn.innerText = '📸 手動擷取';
+  manualSnapBtn.style.cssText = 'flex: 1; background: #7c3aed; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px;';
+  btnRow1.appendChild(startBtn);
+  btnRow1.appendChild(manualSnapBtn);
+  panel.appendChild(btnRow1);
+
+  // 功能列 2
+  const btnRow2 = document.createElement('div');
+  btnRow2.style.cssText = 'display: flex; gap: 6px;';
+  const toggleMetaBtn = document.createElement('button');
+  toggleMetaBtn.innerText = '📅 年份: ON';
+  toggleMetaBtn.style.cssText = 'flex: 1; background: #475569; color: white; border: none; padding: 6px 4px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px;';
+  const toggleLevelBtn = document.createElement('button');
+  toggleLevelBtn.innerText = '⭐ 程度: ON';
+  toggleLevelBtn.style.cssText = 'flex: 1; background: #475569; color: white; border: none; padding: 6px 4px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px;';
+  const toggleTopicBtn = document.createElement('button');
+  toggleTopicBtn.innerText = '📚 課題: ON';
+  toggleTopicBtn.style.cssText = 'flex: 1; background: #475569; color: white; border: none; padding: 6px 4px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px;';
+  btnRow2.appendChild(toggleMetaBtn);
+  btnRow2.appendChild(toggleLevelBtn);
+  btnRow2.appendChild(toggleTopicBtn);
+  panel.appendChild(btnRow2);
+
+  // 功能列 3
+  const btnRow3 = document.createElement('div');
+  btnRow3.style.cssText = 'display: flex; gap: 8px;';
+  const clearBtn = document.createElement('button');
+  clearBtn.innerText = '🗑️ 清空';
+  clearBtn.style.cssText = 'background: #dc2626; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px;';
+  const printBtn = document.createElement('button');
+  printBtn.innerText = '🖨️ 匯出 PDF';
+  printBtn.style.cssText = 'flex: 2; background: #22c55e; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px;';
+  const closeBtn = document.createElement('button');
+  closeBtn.innerText = '✕';
+  closeBtn.style.cssText = 'background: #64748b; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px;';
+  btnRow3.appendChild(clearBtn);
+  btnRow3.appendChild(printBtn);
+  btnRow3.appendChild(closeBtn);
+  panel.appendChild(btnRow3);
+  document.body.appendChild(panel);
+
+  // 3. 核心資料擷取
+  const scrapeCurrentQuestion = () => {
+    panel.style.display = 'none'; 
+
+    const qData = { text: '', meta: '', level: '', topic: '', imgs: [] };
+
+    const allImgs = Array.from(document.querySelectorAll('img.oqb-player-content-images'));
+    let validImgs = allImgs.map(i => i.src).filter(src => !(src.includes('logo') || src.includes('hkeaa') || src.includes('svg')));
+    qData.imgs = Array.from(new Set(validImgs));
+
+    const rows = Array.from(document.querySelectorAll('.row'));
+    rows.forEach(row => {
+      const label = row.querySelector('.col-auto');
+      const valCol = row.querySelector('.col');
+      if (label && valCol) {
+        const text = label.innerText.trim();
+        const val = valCol.innerText.trim();
+        if (text.includes('備註') || text.includes('Remarks')) qData.meta = val;
+        if (text.includes('程度') || text.includes('Level of Difficulty')) qData.level = val;
+        if (text.includes('課題') || text.includes('Topic')) qData.topic = val;
+      }
+    });
+
+    const ignoreSelectors = [
+      '.oqb-question-nav-list-wrapper', '.oqb-client-paper-top-wrapper',
+      '.oqb-client-paper-top-nav-container', '.oqb-client-version-no',
+      '.progress-indicator', '#oqb-auto-collector-ui'
+    ];
+    const bodyClone = document.body.cloneNode(true);
+    ignoreSelectors.forEach(sel => { bodyClone.querySelectorAll(sel).forEach(el => el.remove()); });
+
+    const mainContent = bodyClone.querySelector('.oqb-player-swipe-area') || 
+                        bodyClone.querySelector('.oqb-client-paper-main') || bodyClone;
+
+    const rawNodes = Array.from(mainContent.querySelectorAll('p, span, div, td, label'));
+    const blackList = [
+      '返回', '進度', '試題', '答案不正確', '答案正確', '上一頁', '下一頁', 
+      '切換答案顯示', '提交', '參考資料', '作者', '程度', '課題', '語言', '備註', '考評局', '容易', '英文', '中等', '困難',
+      'Back', 'Progress', 'Question', 'Incorrect', 'Correct', 'Previous', 'Next', 
+      'Toggle Answer', 'Toggle Answer Display', 'Submit', 'Reference', 'Author', 'Level of Difficulty', 'Topic', 'Language', 'Remarks', 'HKEAA', 'Normal'
+    ];
+
+    let cleanTexts = rawNodes
+      .map(el => el.innerText ? el.innerText.trim() : '')
+      .filter(t => {
+        if (!t) return false;
+        if (/^\d{1,2}$/.test(t)) return false; 
+        if (/^\d{1,2}\/\d{1,2}$/.test(t)) return false; 
+        if (t.includes('v1.1.') || t.includes('build')) return false; 
+        if (blackList.some(kw => t === kw || (kw.length > 2 && t.includes(kw)))) return false;
+        return t.length > 1;
+      });
+
+    const uniqueTexts = [];
+    cleanTexts.forEach(txt => {
+      if (!uniqueTexts.some(existing => existing.includes(txt) && existing !== txt)) {
+        if (!uniqueTexts.includes(txt)) uniqueTexts.push(txt);
+      }
+    });
+
+    qData.text = uniqueTexts.join('\n');
+    panel.style.display = 'flex'; 
+
+    const isValid = (qData.text.length > 5 || qData.imgs.length > 0);
+    const isDuplicate = window.autoQuestions.some(q => 
+      (q.text && q.text === qData.text) || 
+      (q.imgs.length > 0 && JSON.stringify(q.imgs) === JSON.stringify(qData.imgs))
+    );
+
+    if (!isDuplicate && isValid) {
+      window.autoQuestions.push(qData);
+      updateStatus();
+      return true;
+    }
+    return false;
+  };
+
+  // 4. 【已修正】極致精準自動換頁
+  const goToNextPage = () => {
+    // 方案 A：精準尋找下方嘅 button (完全配對 Next 或 下一頁)
+    const allButtons = Array.from(document.querySelectorAll('button'));
+    const nextBtn = allButtons.find(btn => {
+      const txt = btn.innerText ? btn.innerText.trim() : '';
+      return (txt === 'Next' || txt === '下一頁' || txt === '下一題') && btn.clientWidth > 0;
+    });
+    
+    if (nextBtn) { 
+      nextBtn.click(); 
+      return true; 
+    }
+
+    // 方案 B (Fallback)：如果下方 Button 搵唔到，用頂部數字列 Click 下一題
+    const currentActiveNav = document.querySelector('.oqb-question-nav-box.active');
+    if (currentActiveNav && currentActiveNav.nextElementSibling) {
+      const nextLi = currentActiveNav.nextElementSibling;
+      // 確保下一個 li 唔係嗰啲令人頭痛嘅 SVG 箭嘴 (過濾 fa-angle-right)
+      if (!nextLi.querySelector('.fa-angle-right') && !nextLi.querySelector('.fa-angles-right')) {
+        const nextLink = nextLi.querySelector('a');
+        if (nextLink) { 
+          nextLink.click(); 
+          return true; 
+        }
+      }
+    }
+    
+    return false;
+  };
+
+  const runAutoLoop = () => {
+    if (!isRunning) return;
+    scrapeCurrentQuestion();
+    if (goToNextPage()) {
+      autoTimer = setTimeout(runAutoLoop, 2500);
+    } else {
+      isRunning = false;
+      startBtn.innerText = '▶️ 開始自動';
+      startBtn.style.background = '#0284c7';
+      modeBadge.innerText = '自動模式 (完成)';
+      updateStatus();
+      alert('🎉 已經連截完畢或找不到「Next / 下一頁」按鈕！');
+    }
+  };
+
+  // 5. 按鈕事件綁定
+  startBtn.onclick = () => {
+    isRunning = !isRunning;
+    if (isRunning) {
+      startBtn.innerText = '⏸️ 暫停';
+      startBtn.style.background = '#eab308';
+      modeBadge.innerText = '自動運行中';
+      runAutoLoop();
+    } else {
+      startBtn.innerText = '▶️ 開始自動';
+      startBtn.style.background = '#0284c7';
+      modeBadge.innerText = '已暫停';
+      clearTimeout(autoTimer);
+      updateStatus();
+    }
+  };
+
+  manualSnapBtn.onclick = () => {
+    if (isRunning) { alert('⚠️ 請先暫停自動模式！'); return; }
+    if (scrapeCurrentQuestion()) {
+      modeBadge.innerText = '手動已擷取';
+      alert('📸 成功擷取當前題目！');
+    } else {
+      alert('⚠️ 此題可能已擷取過或內容無效。');
+    }
+  };
+
+  toggleMetaBtn.onclick = () => {
+    showMetaInfo = !showMetaInfo;
+    toggleMetaBtn.innerText = `📅 年份: ${showMetaInfo ? 'ON' : 'OFF'}`;
+    toggleMetaBtn.style.background = showMetaInfo ? '#475569' : '#334155';
+  };
+
+  toggleLevelBtn.onclick = () => {
+    showLevel = !showLevel;
+    toggleLevelBtn.innerText = `⭐ 程度: ${showLevel ? 'ON' : 'OFF'}`;
+    toggleLevelBtn.style.background = showLevel ? '#475569' : '#334155';
+  };
+
+  toggleTopicBtn.onclick = () => {
+    showTopic = !showTopic;
+    toggleTopicBtn.innerText = `📚 課題: ${showTopic ? 'ON' : 'OFF'}`;
+    toggleTopicBtn.style.background = showTopic ? '#475569' : '#334155';
+  };
+
+  clearBtn.onclick = () => {
+    if (confirm('🗑️ 確定要清空所有已收集嘅題目嗎？')) {
+      window.autoQuestions = [];
+      updateStatus();
+      modeBadge.innerText = '已清空';
+    }
+  };
+
+  // 6. PDF 匯出
+  printBtn.onclick = () => {
+    if (window.autoQuestions.length === 0) { alert('⚠️ 未有收集到任何題目！'); return; }
+
+    let topicName = window.autoQuestions.find(q => q.topic)?.topic;
+    if (!topicName || topicName.trim() === '') {
+      topicName = 'DSE_Questions';
+    }
+    const dynamicTitle = `${topicName} MC`;
+
+    const labels = { 0: 'A.', 1: 'B.', 2: 'C.', 3: 'D.' };
+    const printWindow = window.open('', '_blank');
+
+    let html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>${dynamicTitle}</title>
+        <style>
+          body { font-family: system-ui, -apple-system, sans-serif; padding: 40px; background: #fff; color: #1e293b; max-width: 800px; margin: 0 auto; }
+          .q-card { page-break-inside: avoid; margin-bottom: 35px; padding-bottom: 25px; border-bottom: 2px solid #e2e8f0; }
+          .q-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+          .q-num { font-size: 16px; font-weight: bold; color: #0284c7; }
+          .q-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+          .q-meta { font-size: 12px; font-weight: bold; color: #475569; background: #f1f5f9; padding: 2px 8px; border-radius: 4px; border: 1px solid #cbd5e1; }
+          .q-text { font-size: 16px; line-height: 1.6; white-space: pre-wrap; margin-bottom: 14px; }
+          .img-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+          .opt-label { font-size: 18px; font-weight: bold; min-width: 28px; text-align: right; color: #334155; }
+          img { max-width: 100%; height: auto; display: block; }
+          @media print { .q-card { border-bottom: 1px solid #cbd5e1; } }
+        </style>
+      </head>
+      <body>
+    `;
+
+    window.autoQuestions.forEach((q, idx) => {
+      html += `<div class="q-card">`;
+      html += `<div class="q-header">`;
+      html += `<div class="q-num">${idx + 1}. </div>`;
+      html += `<div class="q-badges">`;
+      if (showMetaInfo && q.meta) html += `<div class="q-meta"> ${q.meta}</div>`;
+      if (showLevel && q.level) html += `<div class="q-meta">⭐ ${q.level}</div>`;
+      if (showTopic && q.topic) html += `<div class="q-meta">${q.topic}</div>`;
+      html += `</div></div>`;
+
+      if (q.text) html += `<div class="q-text">${q.text}</div>`;
+
+      if (q.imgs && q.imgs.length > 0) {
+        const isMultiImg = q.imgs.length > 1;
+        q.imgs.forEach((imgUrl, imgIdx) => {
+          let labelHtml = '<div class="opt-label"></div>';
+          if (isMultiImg && imgIdx > 0 && labels[imgIdx - 1]) {
+            labelHtml = `<div class="opt-label">${labels[imgIdx - 1]}</div>`;
+          }
+          html += `<div class="img-row">${labelHtml}<img src="${imgUrl}" /></div>`;
+        });
+      }
+      html += `</div>`;
+    });
+
+    html += `<script>window.onload = () => { setTimeout(() => { window.print(); }, 600); };<\/script></body></html>`;
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
+  closeBtn.onclick = () => {
+    isRunning = false;
+    clearTimeout(autoTimer);
+    panel.remove();
+  };
+
+  console.log('✅ 精準防誤判版本載入成功！');
+})();
