@@ -675,5 +675,5 @@
     panel.remove();
   };
 
-  console.log('✅ 題目/條目/選項完整解析版載入成功！');
+  console.log('✅ OQB Capture tools on');
 })();
