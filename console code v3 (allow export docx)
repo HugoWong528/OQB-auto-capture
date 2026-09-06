@@ -95,15 +95,15 @@
   btnRow2.style.cssText = 'display: flex; gap: 6px;';
   
   const toggleMetaBtn = document.createElement('button');
-  toggleMetaBtn.innerText = '📅 年份: ON';
+  toggleMetaBtn.innerText = '年份: ON';
   toggleMetaBtn.style.cssText = 'flex: 1; background: #475569; color: white; border: none; padding: 6px 4px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px;';
   
   const toggleLevelBtn = document.createElement('button');
-  toggleLevelBtn.innerText = '⭐ 程度: ON';
+  toggleLevelBtn.innerText = '程度: ON';
   toggleLevelBtn.style.cssText = 'flex: 1; background: #475569; color: white; border: none; padding: 6px 4px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px;';
 
   const toggleTopicBtn = document.createElement('button');
-  toggleTopicBtn.innerText = '📚 課題: ON';
+  toggleTopicBtn.innerText = '課題: ON';
   toggleTopicBtn.style.cssText = 'flex: 1; background: #475569; color: white; border: none; padding: 6px 4px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px;';
 
   btnRow2.appendChild(toggleMetaBtn);
@@ -302,19 +302,19 @@
 
   toggleMetaBtn.onclick = () => {
     showMetaInfo = !showMetaInfo;
-    toggleMetaBtn.innerText = `📅 年份: ${showMetaInfo ? 'ON' : 'OFF'}`;
+    toggleMetaBtn.innerText = `年份: ${showMetaInfo ? 'ON' : 'OFF'}`;
     toggleMetaBtn.style.background = showMetaInfo ? '#475569' : '#334155';
   };
 
   toggleLevelBtn.onclick = () => {
     showLevel = !showLevel;
-    toggleLevelBtn.innerText = `⭐ 程度: ${showLevel ? 'ON' : 'OFF'}`;
+    toggleLevelBtn.innerText = `程度: ${showLevel ? 'ON' : 'OFF'}`;
     toggleLevelBtn.style.background = showLevel ? '#475569' : '#334155';
   };
 
   toggleTopicBtn.onclick = () => {
     showTopic = !showTopic;
-    toggleTopicBtn.innerText = `📚 課題: ${showTopic ? 'ON' : 'OFF'}`;
+    toggleTopicBtn.innerText = `課題: ${showTopic ? 'ON' : 'OFF'}`;
     toggleTopicBtn.style.background = showTopic ? '#475569' : '#334155';
   };
 
@@ -366,9 +366,9 @@
       html += `<div class="q-header">`;
       html += `<div class="q-num">Question ${idx + 1}</div>`;
       html += `<div class="q-badges">`;
-      if (showTopic && q.topic) html += `<div class="q-meta">📚 ${q.topic}</div>`;
-      if (showLevel && q.level) html += `<div class="q-meta">⭐ ${q.level}</div>`;
-      if (showMetaInfo && q.meta) html += `<div class="q-meta">📅 ${q.meta}</div>`;
+      if (showTopic && q.topic) html += `<div class="q-meta">${q.topic}</div>`;
+      if (showLevel && q.level) html += `<div class="q-meta">${q.level}</div>`;
+      if (showMetaInfo && q.meta) html += `<div class="q-meta">${q.meta}</div>`;
       html += `</div></div>`;
 
       // 題幹文字
@@ -511,9 +511,9 @@
         ];
 
         const badges = [];
-        if (showTopic && q.topic) badges.push(`📚 ${q.topic}`);
-        if (showLevel && q.level) badges.push(`⭐ ${q.level}`);
-        if (showMetaInfo && q.meta) badges.push(`📅 ${q.meta}`);
+        if (showTopic && q.topic) badges.push(`${q.topic}`);
+        if (showLevel && q.level) badges.push(`${q.level}`);
+        if (showMetaInfo && q.meta) badges.push(`${q.meta}`);
 
         if (badges.length > 0) {
           headerRuns.push(
