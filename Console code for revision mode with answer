@@ -807,3 +807,28 @@
 
       const blob = await Packer.toBlob(doc);
       const downloadUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = `${topicName}_MC.docx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(downloadUrl);
+
+    } catch (err) {
+      console.error(err);
+      alert('❌ 匯出 DOCX 失敗：' + err.message);
+    } finally {
+      docxBtn.innerText = '📄 DOCX';
+      docxBtn.disabled = false;
+    }
+  };
+
+  closeBtn.onclick = () => {
+    isRunning = false;
+    clearTimeout(autoTimer);
+    panel.remove();
+  };
+
+  console.log('✅ OQB Capture tools (Bottom-Right Answer Box) on');
+})();
