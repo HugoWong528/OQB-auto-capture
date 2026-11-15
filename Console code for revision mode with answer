@@ -7,7 +7,7 @@
   let showMetaInfo = true;
   let showLevel = true;
   let showTopic = true;
-  let answerMode = 'inline'; // 'inline' (題底右下角) | 'end' (頁尾) | 'off' (關閉)
+  let answerMode = 'inline'; // 'inline' (題底) | 'end' (頁尾) | 'off' (關閉)
 
   // 清除舊 UI
   const oldUI = document.getElementById('oqb-auto-collector-ui');
